@@ -11,6 +11,9 @@ if [ ! -d "eigen_source" ]; then
   sh get_eigen.sh
 fi
 
+cd ps-lite && make -j4
+cd ../
+
 cd flatbuffers
 cmake -G "Unix Makefiles"
 make -j 10

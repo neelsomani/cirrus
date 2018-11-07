@@ -251,7 +251,6 @@ std::unique_ptr<ModelGradient> SparseLRModel::minibatch_grad(
 #ifdef DEBUG
     auto after_3 = get_time_us();
 #endif
-
     std::unique_ptr<LRSparseGradient> ret = std::make_unique<LRSparseGradient>(std::move(res));
 #ifdef DEBUG
     auto after_4 = get_time_us();
@@ -456,6 +455,7 @@ std::unique_ptr<ModelGradient> SparseLRModel::minibatch_grad_sparse(
       res.push_back(std::make_pair(index, final_grad));
     }
   }
+  std::cout << "Sending " << res.size() << " index / value pairs" << std::endl;
   std::unique_ptr<LRSparseGradient> ret = std::make_unique<LRSparseGradient>(std::move(res));
   return ret;
 }
