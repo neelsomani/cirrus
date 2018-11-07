@@ -4,6 +4,7 @@
 #include "Checksum.h"
 #include "Constants.h"
 #include "MFModel.h"
+#include "Utils.h"
 #include "common/schemas/PSMessage_generated.h"
 #include "common/schemas/WorkerMessage_generated.h"
 
@@ -295,9 +296,10 @@ void PSSparseServerInterface::send_gradient(
 
   assert(grad_size < MB);  // make sure it fits in stack
   unsigned char buf[grad_size];
-
+  auto now = get_time_us();
   gradient.serialize(buf);
-
+  std::cout << "Took " << get_time_us() - now << " to serialize" << std::endl;
+  now = get_time_us();
   auto grad_vec = builder.CreateVector(buf, grad_size);
   auto grad_msg =
       message::WorkerMessage::CreateGradientMessage(builder, grad_vec, mt);
@@ -305,9 +307,11 @@ void PSSparseServerInterface::send_gradient(
   auto worker_msg = message::WorkerMessage::CreateWorkerMessage(
       builder, message::WorkerMessage::Request_GradientMessage,
       grad_msg.Union());
-
   builder.Finish(worker_msg);
+  std::cout << "Took " << get_time_us() - now << " to make FB" << std::endl;
+  now = get_time_us();
   send_flatbuffer(sock, &builder);
+  std::cout << "Took " << get_time_us() - now << " to send FB" << std::endl;
 }
 
 void PSSparseServerInterface::send_mf_gradient(
