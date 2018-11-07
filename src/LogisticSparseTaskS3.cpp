@@ -107,21 +107,21 @@ void LogisticSparseTaskS3::run(const Configuration& config, int worker) {
     std::cout << get_time_us() << " [WORKER] phase 1 done. Getting the model" << std::endl;
     //dataset->check();
     //dataset->print_info();
-    auto now = get_time_us();
 #endif
+    auto now = get_time_us();
     // compute mini batch gradient
     std::unique_ptr<ModelGradient> gradient;
 
     // we get the model subset with just the right amount of weights
     sparse_model_get->get_new_model_inplace(*dataset, model, config);
 
-#ifdef DEBUG
     std::cout << "get model elapsed(us): " << get_time_us() - now << std::endl;
+#ifdef DEBUG
     std::cout << "Checking model" << std::endl;
     //model.check();
     std::cout << "Computing gradient" << "\n";
-    now = get_time_us();
 #endif
+    now = get_time_us();
 
     try {
       gradient = model.minibatch_grad_sparse(*dataset, config);
@@ -132,14 +132,12 @@ void LogisticSparseTaskS3::run(const Configuration& config, int worker) {
       std::cout << "There was an error computing the gradient" << std::endl;
       exit(-1);
     }
-#ifdef DEBUG
     auto elapsed_us = get_time_us() - now;
     std::cout << "[WORKER] Gradient compute time (us): " << elapsed_us
       << " at time: " << get_time_us()
       << " version " << version << "\n";
-#endif
     gradient->setVersion(version++);
-
+    now = get_time_us();
     try {
       LRSparseGradient* lrg = dynamic_cast<LRSparseGradient*>(gradient.get());
       push_gradient(lrg);
@@ -148,9 +146,7 @@ void LogisticSparseTaskS3::run(const Configuration& config, int worker) {
         << "Worker task error doing put of gradient" << "\n";
       exit(-1);
     }
-#ifdef DEBUG
-    std::cout << get_time_us() << " [WORKER] Sent gradient" << std::endl;
-#endif
+    std::cout << " [WORKER] Sent gradient in " << get_time_us() - now << std::endl;
     count++;
     if (count % 10 == 0 && !printed_rate) {
       auto elapsed_ms = get_time_ms() - start_time;

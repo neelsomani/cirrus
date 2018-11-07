@@ -187,7 +187,9 @@ uint64_t S3SparseIterator::getObjId(uint64_t left, uint64_t right) {
     std::uniform_int_distribution<int> sampler(left, right - 1);
     uint64_t sampled = sampler(re);
     //uint64_t sampled = rand() % right;
+#ifdef DEBUG
     std::cout << "Sampled : " << sampled << " worker_id: " << worker_id << " left: " << left << " right: " << right << std::endl;
+#endif
     return sampled;
   } else {
     auto ret = current++;
@@ -214,9 +216,11 @@ void S3SparseIterator::printProgress(const std::string& s3_obj) {
   count++;
 
   double elapsed_sec = (get_time_us() - start_time) / 1000.0 / 1000.0;
+#ifdef DEBUG
   std::cout << "Getting object count: " << count
             << " s3 e2e bw (MB/s): " << total_received / elapsed_sec / MB
             << std::endl;
+#endif
 }
 
 static int sstreamSize(std::ostringstream& ss) {
@@ -231,7 +235,9 @@ void S3SparseIterator::threadFunction(const Configuration& config) {
   while (1) {
     // if we can go it means there is a slot
     // in the ring
+#ifdef DEBUG
     std::cout << "Waiting for pref_sem" << std::endl;
+#endif
     pref_sem.wait();
 
     std::string obj_id_str = std::to_string(getObjId(left_id, right_id));
@@ -239,15 +245,19 @@ void S3SparseIterator::threadFunction(const Configuration& config) {
     std::ostringstream* s3_obj;
 try_start:
     try {
+#ifdef DEBUG
       std::cout << "S3SparseIterator: getting object " << obj_id_str << std::endl;
+#endif
       uint64_t start = get_time_us();
       s3_obj = s3_client->s3_get_object_ptr(obj_id_str, config.get_s3_bucket());
       uint64_t elapsed_us = (get_time_us() - start);
       double mb_s = sstreamSize(*s3_obj) / elapsed_us * 1000.0 * 1000 / MB;
+#ifdef DEBUG
       std::cout << "received s3 obj"
                 << " elapsed: " << elapsed_us
                 << " size: " << sstreamSize(*s3_obj) << " BW (MB/s): " << mb_s
                 << "\n";
+#endif
       //pm.increment_batches(); // increment number of batches we have processed
 
 #ifdef DEBUG
