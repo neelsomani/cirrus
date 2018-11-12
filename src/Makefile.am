@@ -32,6 +32,7 @@ CPPFLAGS = -static -static-libgcc -static-libstdc++ \
 	   -I$(TOP_DIR)/third_party/aws-sdk-cpp/aws-cpp-sdk-core/include/  \
 	   -I$(TOP_DIR)/third_party/gflags/include/ \
 	   -I$(TOP_DIR)/third_party/flatbuffers/include/ \
+	   -I$(TOP_DIR)/third_party/ps-lite/include/ \
 	   -ggdb -frecord-gcc-switches -O3
 
 CPP_SOURCES = InputReader.cpp Utils.cpp \

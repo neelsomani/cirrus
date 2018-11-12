@@ -12,6 +12,7 @@
 #include "Utils.h"
 #include "common/schemas/PSMessage_generated.h"
 #include "common/schemas/WorkerMessage_generated.h"
+#include "ps/ps.h"
 
 #undef DEBUG
 
