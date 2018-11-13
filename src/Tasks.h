@@ -310,9 +310,10 @@ class PSSparseServerTask : public MLTask {
   bool process_set_value(int, const Request&, std::vector<char>&, int);
   bool process_register_task(int, const Request&, std::vector<char>&, int);
   bool process_deregister_task(int, const Request&, std::vector<char>&, int);
-  void ps_lite_handle_worker(const KVMeta& req_meta,
-                             const KVPairs<float>& req_data,
-                             KVServer* server);
+  void ps_lite_handle_worker(const ps::KVMeta& req_meta,
+                             const ps::KVPairs<float>& req_data,
+                             ps::KVServer<float>* server);
+  int DecodeKey(ps::Key key);
 
   void kill_server();
 
@@ -324,7 +325,7 @@ class PSSparseServerTask : public MLTask {
   /**
     * Attributes
     */
-  ps::KVServer ps_server; // ps-lite server and variables
+  ps::KVServer<float>* ps_server; // ps-lite server and variables
   std::unordered_map<int, std::vector<float>> weights_;
 
   struct MergeBuf {

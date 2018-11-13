@@ -573,12 +573,14 @@ bool PSSparseServerTask::process_deregister_task(
   return true;
 }
 
-void PSSparseServerTask::ps_lite_handle_worker(const KVMeta& req_meta,
-                                               const KVPairs<float>& req_data,
-                                               KVServer* server) {
+void PSSparseServerTask::ps_lite_handle_worker(const ps::KVMeta& req_meta,
+                                               const ps::KVPairs<float>& req_data,
+                                               ps::KVServer<float>* server) {
 
-int key = DecodeKey(req_data.keys[0]);
+  int key = DecodeKey(req_data.keys[0]);
   auto& weights = weights_[key];
+  auto learning_rate_ = .01; // Temporary
+  auto sync_mode_ = 0;
 
   size_t n = req_data.keys.size();
   if (req_meta.push) {
@@ -631,13 +633,14 @@ int key = DecodeKey(req_data.keys[0]);
   }
 }
 
-int DecodeKey(ps::Key key) {
+int PSSparseServerTask::DecodeKey(ps::Key key) {
   auto kr = ps::Postoffice::Get()->GetServerKeyRanges()[ps::MyRank()];
   return key - kr.begin();
 }
 
 void PSSparseServerTask::gradient_f() {
   // Make ps-lite server
+  using namespace std::placeholders;
   ps_server = new ps::KVServer<float>(0);
   ps_server->set_request_handle(
     std::bind(&PSSparseServerTask::ps_lite_handle_worker, this, _1, _2, _3));
