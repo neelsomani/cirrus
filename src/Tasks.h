@@ -10,6 +10,7 @@
 #include "PSSparseServerInterface.h"
 #include "S3SparseIterator.h"
 #include "OptimizationMethod.h"
+#include "ps/ps.h"
 
 #include <chrono>
 #include <map>
@@ -309,6 +310,9 @@ class PSSparseServerTask : public MLTask {
   bool process_set_value(int, const Request&, std::vector<char>&, int);
   bool process_register_task(int, const Request&, std::vector<char>&, int);
   bool process_deregister_task(int, const Request&, std::vector<char>&, int);
+  void ps_lite_handle_worker(const KVMeta& req_meta,
+                             const KVPairs<Val>& req_data,
+                             KVServer* server);
 
   void kill_server();
 
@@ -320,6 +324,10 @@ class PSSparseServerTask : public MLTask {
   /**
     * Attributes
     */
+  ps::KVServer ps_server; // ps-lite server and variables
+  std::unordered_map<int, std::vector<Val>> weights_;
+  std::unordered_map<int, MergeBuf> merge_buf_;
+
   std::unique_ptr<OptimizationMethod> opt_method;  //< SGD optimization method
 
   // keep track of per-worker connections

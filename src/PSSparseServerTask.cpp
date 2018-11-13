@@ -573,7 +573,75 @@ bool PSSparseServerTask::process_deregister_task(
   return true;
 }
 
+void PSSparseServerTask::ps_lite_handle_worker(const KVMeta& req_meta,
+                                               const KVPairs<Val>& req_data,
+                                               KVServer* server) {
+
+int key = DecodeKey(req_data.keys[0]);
+  auto& weights = weights_[key];
+
+  size_t n = req_data.keys.size();
+  if (req_meta.push) {
+    CHECK_EQ(n, req_data.vals.size());
+    if (weights.empty()) {
+      std::cout << "Init weight" << std::endl;
+      weights.resize(n);
+      for (int i = 0; i < n; ++i) {
+        weights[i] = req_data.vals[i];
+      }
+      server->Response(req_meta);
+    } else if (sync_mode_) {
+      auto& merged = merge_buf_[key];
+      if (merged.vals.empty()) {
+        merged.vals.resize(n, 0);
+      }
+
+      for (int i = 0; i < n; ++i) {
+        merged.vals[i] += req_data.vals[i];
+      }
+
+      merged.request.push_back(req_meta);
+      if (merged.request.size() == (size_t)ps::NumWorkers()) {
+        // update the weight
+        for (size_t i = 0; i < n; ++i) {
+          weights[i] -= learning_rate_ * req_data.vals[i] / merged.request.size();
+        }
+        for (const auto& req : merged.request) {
+          server->Response(req);
+        }
+        merged.request.clear();
+        merged.vals.clear();
+      }
+    } else { // async push
+      for (size_t i = 0; i < n; ++i) {
+        weights[i] -= learning_rate_ * req_data.vals[i];
+      }
+      server->Response(req_meta);
+    }
+  } else { // pull
+    CHECK(!weights_.empty()) << "init " << key << " first";
+
+    ps::KVPairs<Val> response;
+    response.keys = req_data.keys;
+    response.vals.resize(n);
+    for (size_t i = 0; i < n; ++i) {
+      response.vals[i] = weights[i];
+    }
+    server->Response(req_meta, response);
+  }
+}
+
+int DecodeKey(ps::Key key) {
+  auto kr = ps::Postoffice::Get()->GetServerKeyRanges()[ps::MyRank()];
+  return key - kr.begin();
+}
+
 void PSSparseServerTask::gradient_f() {
+  // Make ps-lite server
+  ps_server = new ps::KVServer<float>(0);
+  ps_server->set_request_handle(
+    std::bind(&PSSparseServerTask::ps_lite_handle_worker, this, _1, _2, _3));
+
   std::vector<char> thread_buffer;
   thread_buffer.resize(120 * MB);  // 120 MB
   struct timespec ts;
