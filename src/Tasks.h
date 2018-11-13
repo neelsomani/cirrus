@@ -311,7 +311,7 @@ class PSSparseServerTask : public MLTask {
   bool process_register_task(int, const Request&, std::vector<char>&, int);
   bool process_deregister_task(int, const Request&, std::vector<char>&, int);
   void ps_lite_handle_worker(const KVMeta& req_meta,
-                             const KVPairs<Val>& req_data,
+                             const KVPairs<float>& req_data,
                              KVServer* server);
 
   void kill_server();
@@ -325,7 +325,13 @@ class PSSparseServerTask : public MLTask {
     * Attributes
     */
   ps::KVServer ps_server; // ps-lite server and variables
-  std::unordered_map<int, std::vector<Val>> weights_;
+  std::unordered_map<int, std::vector<float>> weights_;
+
+  struct MergeBuf {
+    std::vector<ps::KVMeta> request;
+    std::vector<float> vals;
+  };
+
   std::unordered_map<int, MergeBuf> merge_buf_;
 
   std::unique_ptr<OptimizationMethod> opt_method;  //< SGD optimization method

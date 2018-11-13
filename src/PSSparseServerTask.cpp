@@ -574,7 +574,7 @@ bool PSSparseServerTask::process_deregister_task(
 }
 
 void PSSparseServerTask::ps_lite_handle_worker(const KVMeta& req_meta,
-                                               const KVPairs<Val>& req_data,
+                                               const KVPairs<float>& req_data,
                                                KVServer* server) {
 
 int key = DecodeKey(req_data.keys[0]);
@@ -621,7 +621,7 @@ int key = DecodeKey(req_data.keys[0]);
   } else { // pull
     CHECK(!weights_.empty()) << "init " << key << " first";
 
-    ps::KVPairs<Val> response;
+    ps::KVPairs<float> response;
     response.keys = req_data.keys;
     response.vals.resize(n);
     for (size_t i = 0; i < n; ++i) {
