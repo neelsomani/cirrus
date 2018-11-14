@@ -576,25 +576,28 @@ bool PSSparseServerTask::process_deregister_task(
 void PSSparseServerTask::ps_lite_handle_worker(const ps::KVMeta& req_meta,
                                                const ps::KVPairs<float>& req_data,
                                                ps::KVServer<float>* server) {
-
-  int key = DecodeKey(req_data.keys[0]);
+  int n = req_data.keys.size();
   if (req_meta.push) {
-      // TODO: Get the gradient in the correct format for LRModel
+      unsigned char grad[n * sizeof(FEATURE_TYPE) * 2 + sizeof(int) * 2];
+      // No version for ps-lite
+      store_value<int>(grad, 0);
+      store_value<int>(grad, n);
       server->Response(req_meta);
       for (size_t i = 0; i < n; ++i) {
-        weights[i] -= learning_rate_ * req_data.vals[i];
+        int idx = DecodeKey(req_data.keys[i]);
+        store_value<int>(grad, idx);
+        store_value<FEATURE_TYPE>(req_data.vals[i]);
       }
-      // TODO: Perform the update for the LRModel
-
+      process_send_lr_gradient(grad);
   } else {
-    // TODO: Get the correct model weights.
-
-    // TODO: Put in the right format for sending with the PS.
     ps::KVPairs<float> response;
     response.keys = req_data.keys;
     response.vals.resize(n);
     for (size_t i = 0; i < n; ++i) {
-      response.vals[i] = weights[i];
+        uint32_t entry_index = req_data.keys[i];
+        double weight = lr_model->get_nth_weight(entry_index);
+        opt_method->edit_weight(weight);
+        response.vals[i] = weight;
     }
     server->Response(req_meta, response);
   }
