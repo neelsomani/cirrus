@@ -586,7 +586,7 @@ void PSSparseServerTask::ps_lite_handle_worker(const ps::KVMeta& req_meta,
       for (size_t i = 0; i < n; ++i) {
         int idx = DecodeKey(req_data.keys[i]);
         store_value<int>(grad, idx);
-        store_value<FEATURE_TYPE>(req_data.vals[i]);
+        store_value<FEATURE_TYPE>(grad, req_data.vals[i]);
       }
       process_send_lr_gradient(grad);
   } else {

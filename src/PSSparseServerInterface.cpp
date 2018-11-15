@@ -35,6 +35,7 @@ PSSparseServerInterface::PSSparseServerInterface(const std::string& ip,
   // Save the port in the info
   serv_addr.sin_port = htons(port);
   std::memset(serv_addr.sin_zero, 0, sizeof(serv_addr.sin_zero));
+  worker = new ps::KVWorker<float>(0);
 }
 
 void PSSparseServerInterface::connect() {
@@ -64,76 +65,30 @@ void PSSparseServerInterface::get_lr_sparse_model_inplace(
 #ifdef DEBUG
   std::cout << "Getting LR sparse model inplace" << std::endl;
 #endif
-  flatbuffers::FlatBufferBuilder builder(initial_buffer_size);
-
+  std::vector<ps::Key> keys();
   // Make the index vector
-  // We don't know the number of weights to start with
-  std::shared_ptr<unsigned char> data = std::shared_ptr<unsigned char>(
-      new unsigned char[MAX_MSG_SIZE], std::default_delete<unsigned char[]>());
-  unsigned char* msg = data.get();
-  unsigned char* msg_start = msg;
-  uint32_t num_bytes = 0;
-  int num_entries = 0;
-
-  // write indices to message
   for (const auto& sample : ds.data_) {
     for (const auto& w : sample) {
-      num_bytes += sizeof(w.first);
-      store_value<uint32_t>(msg, w.first);  // encode the index
-      num_entries += 1;
+      keys.push_back(w.first);
     }
   }
+  // Send to ps-lite
+  std::vector<float> vals;
+  worker->Wait(worker->Pull(keys, &vals));
 
-  assert(num_bytes < MAX_MSG_SIZE);
-
-  auto index_vec = builder.CreateVector(msg_start, num_bytes);
-
-  auto sparse_msg = message::WorkerMessage::CreateSparseModelRequest(
-      builder, index_vec,
-      message::WorkerMessage::ModelType_LOGISTIC_REGRESSION);
-
-  auto worker_msg = message::WorkerMessage::CreateWorkerMessage(
-      builder, message::WorkerMessage::Request_SparseModelRequest,
-      sparse_msg.Union());
-
-  builder.Finish(worker_msg);
-
-#ifdef DEBUG
-  std::cout << "Sending sparse model request" << std::endl;
-#endif
-  send_flatbuffer(sock, &builder);
-
-#ifdef DEBUG
-  std::cout << "Successfully sent request... Receiving sparse model response"
-            << std::endl;
-#endif
-  // Get the message size and FlatBuffer message
-  int msg_size;
-  if (read_all(sock, &msg_size, sizeof(int)) == 0) {
-    throw std::runtime_error("Error reading size of message");
+  // Convert to format for LRModel
+  const char indices[keys.size() * sizeof(int)];
+  const char weights[vals.size() * sizeof(FEATURE_TYPE)];
+  for (int i = 0; i < vals.size(); i += 8) {
+    indices[i] = keys[i];
+    weights[i + 4] = vals[i];
   }
 
-  assert(msg_size < MAX_MSG_SIZE);
-  char buf[msg_size];
-  try {
-    if (read_all(sock, &buf, msg_size) == 0) {
-      throw std::runtime_error("Error reading message");
-    }
-  } catch (...) {
-    throw std::runtime_error("Error in read_all for Flatbuffer");
-  }
-
-  auto sparse_model =
-      message::PSMessage::GetPSMessage(&buf)->payload_as_SparseModelResponse();
-
-#ifdef DEBUG
-  std::cout << "Loading model from memory" << std::endl;
-#endif
   // build a truly sparse model and return
   // TODO: Can this copy be avoided?
   lr_model.loadSerializedSparse(
-      reinterpret_cast<const FEATURE_TYPE*>(sparse_model->model()->data()),
-      reinterpret_cast<uint32_t*>(msg_start), sparse_model->model()->size(),
+      reinterpret_cast<const FEATURE_TYPE*>(data),
+      reinterpret_cast<uint32_t*>(indices), keys->size(),
       config);
 }
 
@@ -297,17 +252,17 @@ void PSSparseServerInterface::send_gradient(
   unsigned char buf[grad_size];
 
   gradient.serialize(buf);
+  // Convert to ps-lite format
 
-  auto grad_vec = builder.CreateVector(buf, grad_size);
-  auto grad_msg =
-      message::WorkerMessage::CreateGradientMessage(builder, grad_vec, mt);
+  std::vector<ps::Key> keys;
+  std::vector<float> vals;
 
-  auto worker_msg = message::WorkerMessage::CreateWorkerMessage(
-      builder, message::WorkerMessage::Request_GradientMessage,
-      grad_msg.Union());
-
-  builder.Finish(worker_msg);
-  send_flatbuffer(sock, &builder);
+  for (int i = 8; i < grad_size; i += 8) {
+    keys.push_back(reinterpret_cast<int>(buf[i]));
+    vals.push_back(reinterpret_cast<FEATURE_TYPE>(buf[i + 4]));
+  }
+  // Send
+  worker->Wait(worker->Push(keys, vals));
 }
 
 void PSSparseServerInterface::send_mf_gradient(
