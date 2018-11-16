@@ -576,7 +576,6 @@ bool PSSparseServerTask::process_deregister_task(
 void PSSparseServerTask::ps_lite_handle_worker(const ps::KVMeta& req_meta,
                                                const ps::KVPairs<float>& req_data,
                                                ps::KVServer<float>* server) {
-
   int key = DecodeKey(req_data.keys[0]);
   auto& weights = weights_[key];
   auto learning_rate_ = .01; // Temporary
@@ -585,14 +584,16 @@ void PSSparseServerTask::ps_lite_handle_worker(const ps::KVMeta& req_meta,
   size_t n = req_data.keys.size();
   if (req_meta.push) {
     CHECK_EQ(n, req_data.vals.size());
-    if (weights.empty()) {
+    if (weights.empty()) { // first push
       std::cout << "Init weight" << std::endl;
       weights.resize(n);
       for (int i = 0; i < n; ++i) {
         weights[i] = req_data.vals[i];
       }
       server->Response(req_meta);
-    } else if (sync_mode_) {
+    } 
+    /*
+    else if (sync_mode_) {
       auto& merged = merge_buf_[key];
       if (merged.vals.empty()) {
         merged.vals.resize(n, 0);
@@ -614,11 +615,20 @@ void PSSparseServerTask::ps_lite_handle_worker(const ps::KVMeta& req_meta,
         merged.request.clear();
         merged.vals.clear();
       }
-    } else { // async push
-      for (size_t i = 0; i < n; ++i) {
+    } */ 
+    else { // async push
+      char weights_temp[weights.size() * 4];
+      for (size_t i = 0; i < n; ++i) { // serialize into char* form
         weights[i] -= learning_rate_ * req_data.vals[i];
+        weights_temp[i * 4] = weights[i];
       }
       server->Response(req_meta);
+      LRSparseGradient gradient(0);
+      gradient.loadSerialized(weights_temp);
+      model_lock.lock();
+      opt_method->sgd_update(lr_model, &gradient);
+      model_lock.unlock();
+      gradientUpdatesCount++;
     }
   } else { // pull
     CHECK(!weights_.empty()) << "init " << key << " first";

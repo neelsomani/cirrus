@@ -6,6 +6,7 @@
 #include "MFModel.h"
 #include "common/schemas/PSMessage_generated.h"
 #include "common/schemas/WorkerMessage_generated.h"
+#include "ps/ps.h"
 
 #undef DEBUG
 
@@ -18,6 +19,7 @@ static const int initial_buffer_size = 50;
 PSSparseServerInterface::PSSparseServerInterface(const std::string& ip,
                                                  int port)
     : ip(ip), port(port) {
+  ps_worker = new ps::KVWorker<float>(0, 0);
   if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     throw std::runtime_error("Error when creating socket.");
   }

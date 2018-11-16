@@ -18,6 +18,7 @@
 #include "Utils.h"
 #include "common/schemas/PSMessage_generated.h"
 #include "common/schemas/WorkerMessage_generated.h"
+#include "ps/ps.h"
 
 namespace cirrus {
 
@@ -86,6 +87,7 @@ class PSSparseServerInterface {
   int port;
   int sock = -1;
   struct sockaddr_in serv_addr;
+  ps::KVWorker<float>* ps_worker;
 };
 
 }  // namespace cirrus
