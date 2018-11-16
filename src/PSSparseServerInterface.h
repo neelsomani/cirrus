@@ -87,7 +87,7 @@ class PSSparseServerInterface {
   int port;
   int sock = -1;
   struct sockaddr_in serv_addr;
-  ps::KVWorker<float>* ps_worker;
+  ps::KVWorker<float> *worker;
 };
 
 }  // namespace cirrus

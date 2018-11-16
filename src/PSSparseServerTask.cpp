@@ -576,68 +576,28 @@ bool PSSparseServerTask::process_deregister_task(
 void PSSparseServerTask::ps_lite_handle_worker(const ps::KVMeta& req_meta,
                                                const ps::KVPairs<float>& req_data,
                                                ps::KVServer<float>* server) {
-  int key = DecodeKey(req_data.keys[0]);
-  auto& weights = weights_[key];
-  auto learning_rate_ = .01; // Temporary
-  auto sync_mode_ = 0;
-
-  size_t n = req_data.keys.size();
+  int n = req_data.keys.size();
   if (req_meta.push) {
-    CHECK_EQ(n, req_data.vals.size());
-    if (weights.empty()) { // first push
-      std::cout << "Init weight" << std::endl;
-      weights.resize(n);
-      for (int i = 0; i < n; ++i) {
-        weights[i] = req_data.vals[i];
-      }
+      unsigned char grad[n * sizeof(FEATURE_TYPE) * 2 + sizeof(int) * 2];
+      // No version for ps-lite
+      *((int *) grad[0]) = 0;
+      *((int *) grad[4]) = n;
       server->Response(req_meta);
-    } 
-    /*
-    else if (sync_mode_) {
-      auto& merged = merge_buf_[key];
-      if (merged.vals.empty()) {
-        merged.vals.resize(n, 0);
+      for (size_t i = 8; i < 4 * n; i += 4) {
+        int idx = DecodeKey(req_data.keys[i]);
+        *((int *) grad[8 * i]) = idx;
+        *((FEATURE_TYPE *) grad[8 * i + 4]) = req_data.vals[i];
       }
-
-      for (int i = 0; i < n; ++i) {
-        merged.vals[i] += req_data.vals[i];
-      }
-
-      merged.request.push_back(req_meta);
-      if (merged.request.size() == (size_t)ps::NumWorkers()) {
-        // update the weight
-        for (size_t i = 0; i < n; ++i) {
-          weights[i] -= learning_rate_ * req_data.vals[i] / merged.request.size();
-        }
-        for (const auto& req : merged.request) {
-          server->Response(req);
-        }
-        merged.request.clear();
-        merged.vals.clear();
-      }
-    } */ 
-    else { // async push
-      char weights_temp[weights.size() * 4];
-      for (size_t i = 0; i < n; ++i) { // serialize into char* form
-        weights[i] -= learning_rate_ * req_data.vals[i];
-        weights_temp[i * 4] = weights[i];
-      }
-      server->Response(req_meta);
-      LRSparseGradient gradient(0);
-      gradient.loadSerialized(weights_temp);
-      model_lock.lock();
-      opt_method->sgd_update(lr_model, &gradient);
-      model_lock.unlock();
-      gradientUpdatesCount++;
-    }
-  } else { // pull
-    CHECK(!weights_.empty()) << "init " << key << " first";
-
+      process_send_lr_gradient(grad);
+  } else {
     ps::KVPairs<float> response;
     response.keys = req_data.keys;
     response.vals.resize(n);
     for (size_t i = 0; i < n; ++i) {
-      response.vals[i] = weights[i];
+        uint32_t entry_index = req_data.keys[i];
+        double weight = lr_model->get_nth_weight(entry_index);
+        opt_method->edit_weight(weight);
+        response.vals[i] = weight;
     }
     server->Response(req_meta, response);
   }
