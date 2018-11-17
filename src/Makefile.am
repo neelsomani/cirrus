@@ -11,7 +11,8 @@ bin_PROGRAMS = parameter_server ps_test csv_to_libsvm $(TOP_DIR)/tests/test_trav
 
 LIBS         =  -laws-cpp-sdk-s3 -laws-cpp-sdk-core \
 		-lcurl -lssl -lcrypto -lz -ldl -lkrb5 -lk5crypto \
-		-lall -lkeyutils -lresolv -lgflags
+		-lall -lkeyutils -lresolv -lgflags -lps -lprotobuf \
+                -lzmq -lprotoc
 
 LINCLUDES    = -L$(TOP_DIR)/third_party/aws-sdk-cpp/build/aws-cpp-sdk-core/ \
 	       -L$(TOP_DIR)/third_party/aws-sdk-cpp/build/aws-cpp-sdk-s3 \
@@ -19,7 +20,9 @@ LINCLUDES    = -L$(TOP_DIR)/third_party/aws-sdk-cpp/build/aws-cpp-sdk-core/ \
 	       -L$(TOP_DIR)/third_party/keyutils/ \
 	       -L$(TOP_DIR)/third_party/gflags/lib/ \
 	       -L$(TOP_DIR)/third_party/curl/curl/lib/.libs/ \
-	       -L$../common/
+	       -L$../common/ \
+	       -L$(TOP_DIR)/third_party/ps-lite/build/ \
+	       -L$(TOP_DIR)/third_party/ps-lite/deps/lib
 
 LDADD    = $(LINCLUDES) $(LIBS)
 LDFLAGS  = -static-libgcc  -static  -Wl,--whole-archive \
