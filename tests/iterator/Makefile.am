@@ -32,11 +32,14 @@ LINCLUDES = -L$(THIRD_PARTY_DIR)/kerberos/src/lib \
 	    -L$(THIRD_PARTY_DIR)/gflags/lib/ \
 	    -L$(THIRD_PARTY_DIR)/curl/curl/lib/.libs/ \
 	    -L$(THIRD_PARTY_DIR)/aws-sdk-cpp/build/aws-cpp-sdk-core/ \
-	    -L$(THIRD_PARTY_DIR)/aws-sdk-cpp/build/aws-cpp-sdk-s3
+	    -L$(THIRD_PARTY_DIR)/aws-sdk-cpp/build/aws-cpp-sdk-s3 \
+        -L$(THIRD_PARTY_DIR)/ps-lite/build/ \
+        -L$(THIRD_PARTY_DIR)/ps-lite/deps/lib
 
 LIBS= -laws-cpp-sdk-s3 -laws-cpp-sdk-core \
       -lcurl -lssl -lcrypto -lz -ldl -lkrb5 -lk5crypto \
-      -lall -lkeyutils -lresolv -lgflags
+      -lall -lkeyutils -lresolv -lgflags -lps -lprotobuf \
+      -lzmq -lprotoc
 
 LDFLAGS  =-static-libgcc  -static \
 	  -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
@@ -46,7 +49,9 @@ LDADD    = $(LINCLUDES) $(LIBS)
 AM_CPPFLAGS=-I$(CIRRUS_SRC_DIR) \
 	 -I$(THIRD_PARTY_DIR)/aws-sdk-cpp/aws-cpp-sdk-s3/include/ \
 	 -I$(THIRD_PARTY_DIR)/aws-sdk-cpp/aws-cpp-sdk-core/include/ \
-	 -I$(THIRD_PARTY_DIR)/eigen_source/
+	 -I$(THIRD_PARTY_DIR)/eigen_source/ \
+	 -I$(THIRD_PARTY_DIR)/third_party/ps-lite/include/ \
+     -I$(THIRD_PARTY_DIR)/third_party/ps-lite/src/
 
 bin_PROGRAMS = test_libsvm_iterator
 

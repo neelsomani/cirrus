@@ -42,11 +42,14 @@ LINCLUDES = -L$(THIRD_PARTY_DIR)/kerberos/src/lib \
 	    -L$(THIRD_PARTY_DIR)/aws-sdk-cpp/build/aws-cpp-sdk-core/ \
 	    -L$(THIRD_PARTY_DIR)/aws-sdk-cpp/build/aws-cpp-sdk-s3 \
 	    -L/home/ec2-user/kerberos/krb5-1.15.2/src/lib \
-	    -L/home/ec2-user/keyutils/keyutils-1.5.10
+	    -L/home/ec2-user/keyutils/keyutils-1.5.10 \
+        -L$(THIRD_PARTY_DIR)/ps-lite/build/ \
+        -L$(THIRD_PARTY_DIR)/ps-lite/deps/lib
 
 LIBS= -laws-cpp-sdk-s3 -laws-cpp-sdk-core \
       -lcurl -lssl -lcrypto -lz -ldl -lkrb5 -lk5crypto \
-      -lall -lkeyutils -lresolv -lgflags
+      -lall -lkeyutils -lresolv -lgflags -lps -lprotobuf \
+      -lzmq -lprotoc
 
 LDFLAGS  =-static-libgcc  -static \
 	  -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
@@ -57,7 +60,9 @@ AM_CPPFLAGS=-I$(CIRRUS_SRC_DIR) \
 	 -I$(THIRD_PARTY_DIR)/aws-sdk-cpp/aws-cpp-sdk-s3/include/ \
 	 -I$(THIRD_PARTY_DIR)/aws-sdk-cpp/aws-cpp-sdk-core/include/ \
 	 -I$(THIRD_PARTY_DIR)/eigen_source/ \
-	 -I$(THIRD_PARTY_DIR)/flatbuffers/include
+	 -I$(THIRD_PARTY_DIR)/flatbuffers/include \
+	 -I$(THIRD_PARTY_DIR)/third_party/ps-lite/include/ \
+     -I$(THIRD_PARTY_DIR)/third_party/ps-lite/src/
 
 test_register_worker_SOURCES = test_register_worker.cpp $(CIRRUS_SRC_FILES)
 test_keyvalue_SOURCES = test_keyvalue.cpp $(CIRRUS_SRC_FILES)
