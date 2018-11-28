@@ -609,12 +609,6 @@ int PSSparseServerTask::DecodeKey(ps::Key key) {
 }
 
 void PSSparseServerTask::gradient_f() {
-  // Make ps-lite server
-  using namespace std::placeholders;
-  ps_server = new ps::KVServer<float>(0);
-  ps_server->set_request_handle(
-    std::bind(&PSSparseServerTask::ps_lite_handle_worker, this, _1, _2, _3));
-
   std::vector<char> thread_buffer;
   thread_buffer.resize(120 * MB);  // 120 MB
   struct timespec ts;
@@ -833,6 +827,12 @@ void PSSparseServerTask::start_server() {
   mf_model->randomize();
 
   sem_init(&sem_new_req, 0, 0);
+
+  // Make ps-lite server
+  using namespace std::placeholders;
+  ps_server = new ps::KVServer<float>(0);
+  ps_server->set_request_handle(
+    std::bind(&PSSparseServerTask::ps_lite_handle_worker, this, _1, _2, _3));
 
   for (uint32_t i = 0; i < NUM_PS_WORK_THREADS; ++i) {
     gradient_thread.push_back(std::make_unique<std::thread>(
