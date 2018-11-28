@@ -61,8 +61,8 @@ AM_CPPFLAGS=-I$(CIRRUS_SRC_DIR) \
 	 -I$(THIRD_PARTY_DIR)/aws-sdk-cpp/aws-cpp-sdk-core/include/ \
 	 -I$(THIRD_PARTY_DIR)/eigen_source/ \
 	 -I$(THIRD_PARTY_DIR)/flatbuffers/include \
-	 -I$(THIRD_PARTY_DIR)/third_party/ps-lite/include/ \
-     -I$(THIRD_PARTY_DIR)/third_party/ps-lite/src/
+	 -I$(THIRD_PARTY_DIR)/ps-lite/include/ \
+     -I$(THIRD_PARTY_DIR)/ps-lite/src/
 
 test_register_worker_SOURCES = test_register_worker.cpp $(CIRRUS_SRC_FILES)
 test_keyvalue_SOURCES = test_keyvalue.cpp $(CIRRUS_SRC_FILES)
