@@ -30,18 +30,24 @@ int main() {
   SparseLRModel model(1 << config.get_model_bits());
   std::unique_ptr<PSSparseServerInterface> psi =
       std::make_unique<PSSparseServerInterface>("127.0.0.1", 1337);
+  std::cout << "Made PSI ptr" << std::endl;
   psi->connect();
+  std::cout << "Finished connecting" << std::endl;
   int version = 0;
   while (1) {
     SparseDataset minibatch = train_dataset.random_sample(20);
+    std::cout << "Fetched sample" << std::endl;
     psi->get_lr_sparse_model_inplace(minibatch, model, config);
+    std::cout << "Got sparse model inplace" << std::endl;
     auto gradient = model.minibatch_grad_sparse(minibatch, config);
+    std::cout << "Performed grad descent update" << std::endl;
     gradient->setVersion(version++);
     LRSparseGradient* lrg = dynamic_cast<LRSparseGradient*>(gradient.get());
     if (lrg == nullptr) {
       throw std::runtime_error("Error in dynamic cast");
     }
     psi->send_lr_gradient(*lrg);
+    std::cout << "Sent gradient" << std::endl;
   }
   return 0;
 }

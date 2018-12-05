@@ -80,6 +80,7 @@ void PSSparseServerInterface::get_lr_sparse_model_inplace(
       n_weights += 1;
     }
   }
+  std::cout << "Found " << n_weights << " weights" << std::endl;
   std::vector<ps::Key> keys(n_weights);
   // Make the index vector
   int idx = 0;
@@ -89,17 +90,19 @@ void PSSparseServerInterface::get_lr_sparse_model_inplace(
       idx += 1;
     }
   }
+  std::cout << "Made the keys vector" << std::endl;
   // Send to ps-lite
   std::vector<float> vals;
   worker->Wait(worker->Pull(keys, &vals));
-
+  std::cout << "Called pull from ps-lite" << std::endl;
   // Convert to format for LRModel
   char indices[keys.size() * sizeof(int)];
   char weights[vals.size() * sizeof(FEATURE_TYPE)];
-  for (int i = 0; i < vals.size(); i += 8) {
-    indices[i] = keys[i];
-    weights[i + 4] = vals[i];
+  for (int i = 0; i < vals.size(); i++) {
+    indices[i * 4] = keys[i];
+    weights[i * 4] = vals[i];
   }
+  std::cout << "Made index and weight vectors" << std::endl;
 
   // build a truly sparse model and return
   // TODO: Can this copy be avoided?
@@ -107,6 +110,7 @@ void PSSparseServerInterface::get_lr_sparse_model_inplace(
       reinterpret_cast<const FEATURE_TYPE*>(weights),
       reinterpret_cast<uint32_t*>(indices), vals.size(),
       config);
+  std::cout << "Loaded as lr_model" << std::endl;
 }
 
 SparseLRModel PSSparseServerInterface::get_lr_sparse_model(

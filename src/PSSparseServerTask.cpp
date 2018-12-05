@@ -843,7 +843,7 @@ void PSSparseServerTask::start_server() {
     gradient_thread.push_back(std::make_unique<std::thread>(
         std::bind(&PSSparseServerTask::gradient_f, this)));
   }
-
+  std::cout << "Created gradient_f threads" << std::endl;
   // create barrier for all poll threads
   if (pthread_barrier_init(threads_barrier.get(), nullptr, NUM_POLL_THREADS) !=
       0) {
@@ -854,12 +854,13 @@ void PSSparseServerTask::start_server() {
     server_threads.push_back(std::make_unique<std::thread>(
         std::bind(&PSSparseServerTask::main_poll_thread_fn, this, i)));
   }
-
+  std::cout << "Created server threads" << std::endl;
   // start checkpoing thread
   if (task_config.get_checkpoint_frequency() > 0) {
     checkpoint_thread.push_back(std::make_unique<std::thread>(
         std::bind(&PSSparseServerTask::checkpoint_model_loop, this)));
   }
+  std::cout << "Finished making threads" << std::endl;
 }
 
 void PSSparseServerTask::kill_server() {
