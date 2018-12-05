@@ -7,6 +7,7 @@
 #include "common/schemas/PSMessage_generated.h"
 #include "common/schemas/WorkerMessage_generated.h"
 #include "ps/ps.h"
+#include <unistd.h>
 
 #undef DEBUG
 
@@ -37,8 +38,12 @@ PSSparseServerInterface::PSSparseServerInterface(const std::string& ip,
   serv_addr.sin_port = htons(port);
   std::memset(serv_addr.sin_zero, 0, sizeof(serv_addr.sin_zero));
   // Launch ps-lite
+  std::cout << "Starting ps-lite" << std::endl;
   ps::Start(0);
+  usleep(3000000);
+  std::cout << "Finished starting, making KVWorker" << std::endl;
   worker = new ps::KVWorker<float>(0, 0);
+  std::cout << "Finished making KVWorker" << std::endl;
 }
 
 void PSSparseServerInterface::connect() {

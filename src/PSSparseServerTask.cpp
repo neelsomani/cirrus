@@ -829,10 +829,15 @@ void PSSparseServerTask::start_server() {
   sem_init(&sem_new_req, 0, 0);
 
   // Make ps-lite server
+  std::cout << "Starting ps-lite server" << std::endl;
+  ps::Start(0);
+  std::cout << "Finished starting, making KVServer" << std::endl;
   using namespace std::placeholders;
   ps_server = new ps::KVServer<float>(0);
+  std::cout << "Finished making KVServer" << std::endl;
   ps_server->set_request_handle(
     std::bind(&PSSparseServerTask::ps_lite_handle_worker, this, _1, _2, _3));
+  std::cout << "Finished setting req. handle" << std::endl;
 
   for (uint32_t i = 0; i < NUM_PS_WORK_THREADS; ++i) {
     gradient_thread.push_back(std::make_unique<std::thread>(

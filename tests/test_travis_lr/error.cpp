@@ -7,6 +7,7 @@
 #include "SparseLRModel.h"
 #include "Utils.h"
 #include "config.h"
+#include "ps/ps.h"
 
 #define DEBUG
 #define ERROR_INTERVAL_USEC (100000)  // time between error checks
@@ -39,6 +40,7 @@ void signal_callback_handler(int signum) {
 }
 
 int main() {
+  ps::Start(0);
   signal(SIGPIPE, signal_callback_handler);
   // get data first
   // what we are going to use as a test set
