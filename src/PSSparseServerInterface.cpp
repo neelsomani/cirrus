@@ -36,6 +36,8 @@ PSSparseServerInterface::PSSparseServerInterface(const std::string& ip,
   // Save the port in the info
   serv_addr.sin_port = htons(port);
   std::memset(serv_addr.sin_zero, 0, sizeof(serv_addr.sin_zero));
+  // Launch ps-lite
+  ps::Start(0);
   worker = new ps::KVWorker<float>(0, 0);
 }
 
