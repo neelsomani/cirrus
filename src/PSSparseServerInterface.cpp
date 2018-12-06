@@ -91,16 +91,34 @@ void PSSparseServerInterface::get_lr_sparse_model_inplace(
     }
   }
   std::cout << "Made the keys vector" << std::endl;
+  std::set<int> s;
+  for( unsigned i = 0; i < n_weights; ++i ) s.insert( keys[i] );
+  std::vector<ps::Key> clean_keys(n_weights);
+  clean_keys.assign( s.begin(), s.end() );
+  std::cout << "Made clean keys vector" << std::endl;
   // Send to ps-lite
   std::vector<float> vals;
-  worker->Wait(worker->Pull(keys, &vals));
+  worker->Wait(worker->Pull(clean_keys, &vals));
   std::cout << "Called pull from ps-lite" << std::endl;
+  std::map<ps::Key, float> m;
+  assert(clean_keys.size() == vals.size());
+  for (size_t i = 0; i < clean_keys.size(); ++i)
+      m[clean_keys[i]] = vals[i];
+  std::cout << "Created map of key to value" << std::endl;
+  std::vector<float> correct_vals(n_weights);
+  for (const auto& sample : ds.data_) {
+    for (const auto& w : sample) {
+      correct_vals[idx] = m[w.first];
+      idx += 1;
+    }
+  }
+  std::cout << "Make in original format" << std::endl;
   // Convert to format for LRModel
   char indices[keys.size() * sizeof(int)];
-  char weights[vals.size() * sizeof(FEATURE_TYPE)];
-  for (int i = 0; i < vals.size(); i++) {
+  char weights[correct_vals.size() * sizeof(FEATURE_TYPE)];
+  for (int i = 0; i < correct_vals.size(); i++) {
     indices[i * 4] = keys[i];
-    weights[i * 4] = vals[i];
+    weights[i * 4] = correct_vals[i];
   }
   std::cout << "Made index and weight vectors" << std::endl;
 
