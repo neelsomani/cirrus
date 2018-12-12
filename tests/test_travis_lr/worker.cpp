@@ -20,7 +20,13 @@ using namespace cirrus;
 
 cirrus::Configuration config = cirrus::Configuration("configs/test_config.cfg");
 
-int main() {
+int main(int argc, char* argv[]) {
+  if (argc > 1) {
+      std::cout << "Scheduler" << std::endl;
+      ps::Start(0);
+      ps::Finalize(0, true);
+      return 0;
+  }
   InputReader input;
   SparseDataset train_dataset = input.read_input_criteo_kaggle_sparse(
       "tests/test_data/train_lr.csv", ",", config);  // normalize=true

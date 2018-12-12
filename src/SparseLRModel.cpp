@@ -380,10 +380,13 @@ void SparseLRModel::loadSerializedSparse(const FEATURE_TYPE* weights,
                                          const uint32_t* weight_indices,
                                          uint64_t num_bytes,
                                          const Configuration& config) {
+  std::cout << "In beginning of loadSerializedSparse" << std::endl;
   is_sparse_ = true;
   int num_weights = num_bytes / sizeof(FEATURE_TYPE);
   assert(num_weights > 0 && num_weights < 10000000);
+  std::cout << "Reserving space for weights_sparse_" << std::endl;
   weights_sparse_.reserve((1 << config.get_model_bits()));
+  std::cout << "Reached index value loop" << std::endl;
   for (uint64_t i = 0; i < num_weights; i++) {
     uint32_t index = load_value<uint32_t>(weight_indices);
     FEATURE_TYPE value = load_value<FEATURE_TYPE>(weights);

@@ -86,6 +86,9 @@ void PSSparseServerInterface::get_lr_sparse_model_inplace(
   int idx = 0;
   for (const auto& sample : ds.data_) {
     for (const auto& w : sample) {
+      if (idx < 10) {
+        std::cout << "Original index: " << w.first << std::endl;
+      }
       keys[idx] = w.first;
       idx += 1;
     }
@@ -114,19 +117,28 @@ void PSSparseServerInterface::get_lr_sparse_model_inplace(
   }
   std::cout << "Make in original format" << std::endl;
   // Convert to format for LRModel
-  char indices[keys.size() * sizeof(int)];
-  char weights[correct_vals.size() * sizeof(FEATURE_TYPE)];
+  int indices_temp[keys.size()];
+  float weights_temp[correct_vals.size()];
   for (int i = 0; i < correct_vals.size(); i++) {
-    indices[i * 4] = keys[i];
-    weights[i * 4] = correct_vals[i];
+    indices_temp[i] = keys[i];
+    weights_temp[i] = correct_vals[i];
   }
+  char* indices = (char*) indices_temp;
+  char* weights = (char*) weights_temp;
   std::cout << "Made index and weight vectors" << std::endl;
+
+  for (int j = 0; j < 10; j++) {
+    std::cout << "key (idx): " << keys[j] << std::endl;
+    std::cout << "index: " << *((int*) &indices[j*sizeof(int)]) << std::endl;
+    std::cout << "weight: " << *((float*) &weights[j*sizeof(float)]) << std::endl;
+  }
+  std::cout << "Printed weights" << std::endl;
 
   // build a truly sparse model and return
   // TODO: Can this copy be avoided?
   lr_model.loadSerializedSparse(
       reinterpret_cast<const FEATURE_TYPE*>(weights),
-      reinterpret_cast<uint32_t*>(indices), vals.size(),
+      reinterpret_cast<uint32_t*>(indices), correct_vals.size(),
       config);
   std::cout << "Loaded as lr_model" << std::endl;
 }
