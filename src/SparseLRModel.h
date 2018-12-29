@@ -204,8 +204,8 @@ class SparseLRModel : public CirrusModel {
 
     bool is_sparse_ = false;
 
-    //mutable std::unordered_map<uint32_t, FEATURE_TYPE> weights_sparse_;
-    mutable std::vector<FEATURE_TYPE> weights_sparse_;
+    mutable std::unordered_map<uint32_t, FEATURE_TYPE> weights_sparse_;
+    //mutable std::vector<FEATURE_TYPE> weights_sparse_;
 
     FEATURE_TYPE momentum_avg = 0.0;
     double grad_threshold_ = 0;

@@ -81,6 +81,11 @@ cmake .. -DBUILD_SHARED_LIBS=OFF -DBUILD_ONLY="s3;core"
 make -j 10
 cd ../.. # back to third_party
 
+# ps-lite
+cd ps-lite
+make
+cd ../
+
 cd .. # back to top_dir
 
 # main compilation

@@ -95,8 +95,8 @@ void PSSparseServerInterface::get_lr_sparse_model_inplace(
   }
   std::cout << "Made the keys vector" << std::endl;
   std::set<int> s;
-  for( unsigned i = 0; i < n_weights; ++i ) s.insert( keys[i] );
-  std::vector<ps::Key> clean_keys(n_weights);
+  for( unsigned i = 0; i < n_weights; i++ ) s.insert( keys[i] );
+  std::vector<ps::Key> clean_keys(s.size());
   clean_keys.assign( s.begin(), s.end() );
   std::cout << "Made clean keys vector" << std::endl;
   // Send to ps-lite
